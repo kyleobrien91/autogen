@@ -70,7 +70,7 @@ class OpenAIWrapper:
                 and additional kwargs.
         """
         openai_config, extra_kwargs = self._separate_openai_config(base_config)
-        if type(config_list) is list and len(config_list) == 0:
+        if type(config_list) is list and not config_list:
             logger.warning("openai client was provided with an empty config_list, which may not be intended.")
         if config_list:
             config_list = [config.copy() for config in config_list]  # make a copy before modifying
@@ -135,8 +135,7 @@ class OpenAIWrapper:
         """
         openai_config = {**openai_config, **{k: v for k, v in config.items() if k in self.openai_kwargs}}
         self._process_for_azure(openai_config, config)
-        client = OpenAI(**openai_config)
-        return client
+        return OpenAI(**openai_config)
 
     @classmethod
     def instantiate(

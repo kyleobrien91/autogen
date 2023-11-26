@@ -24,9 +24,13 @@ def create_teachable_agent(reset_db=False):
     # See https://microsoft.github.io/autogen/docs/FAQ#set-your-api-endpoints
     # and OAI_CONFIG_LIST_sample
     config_list = config_list_from_json(env_or_file="OAI_CONFIG_LIST", filter_dict=filter_dict)
-    teachable_agent = TeachableAgent(
+    return TeachableAgent(
         name="teachableagent",
-        llm_config={"config_list": config_list, "timeout": 120, "use_cache": use_cache},
+        llm_config={
+            "config_list": config_list,
+            "timeout": 120,
+            "use_cache": use_cache,
+        },
         teach_config={
             "verbosity": verbosity,
             "reset_db": reset_db,
@@ -34,7 +38,6 @@ def create_teachable_agent(reset_db=False):
             "recall_threshold": recall_threshold,
         },
     )
-    return teachable_agent
 
 
 def interact_freely_with_user():

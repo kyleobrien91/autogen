@@ -17,7 +17,7 @@ def collate(results_dir):
         results_dir (path): The folder were results were be saved.
     """
 
-    all_results = list()
+    all_results = []
     max_instances = 0
 
     for test_id in os.listdir(results_dir):
@@ -55,7 +55,7 @@ def collate(results_dir):
     # Create a header
     header = "TestId"
     for i in range(0, max_instances):
-        header += ",Trial" + str(i)
+        header += f",Trial{str(i)}"
     print(header)
 
     # Print a fully-populated table of results
@@ -96,7 +96,7 @@ Where x_ij is the number of AsssitantAgent conversation turns needed to pass all
     parser.add_argument(
         "scenario",
         nargs="?",
-        help="Path to the scenario results. (default: " + default_results_dir + ")",
+        help=f"Path to the scenario results. (default: {default_results_dir})",
         default=default_results_dir,
     )
     args = parser.parse_args()

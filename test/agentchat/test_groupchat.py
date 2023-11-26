@@ -113,24 +113,11 @@ def _test_selection_method(method: str):
         messages=[],
         max_round=6,
         speaker_selection_method=method,
-        allow_repeat_speaker=False if method == "manual" else True,
+        allow_repeat_speaker=method != "manual",
     )
     group_chat_manager = autogen.GroupChatManager(groupchat=groupchat, llm_config=False)
 
-    if method == "round_robin":
-        agent1.initiate_chat(group_chat_manager, message="This is alice speaking.")
-        assert len(agent1.chat_messages[group_chat_manager]) == 6
-        assert len(groupchat.messages) == 6
-        assert [msg["content"] for msg in agent1.chat_messages[group_chat_manager]] == [
-            "This is alice speaking.",
-            "This is bob speaking.",
-            "This is charlie speaking.",
-        ] * 2
-    elif method == "auto":
-        agent1.initiate_chat(group_chat_manager, message="This is alice speaking.")
-        assert len(agent1.chat_messages[group_chat_manager]) == 6
-        assert len(groupchat.messages) == 6
-    elif method == "random":
+    if method in {"auto", "random"}:
         agent1.initiate_chat(group_chat_manager, message="This is alice speaking.")
         assert len(agent1.chat_messages[group_chat_manager]) == 6
         assert len(groupchat.messages) == 6
@@ -143,8 +130,6 @@ def _test_selection_method(method: str):
                 agent3.reset()
                 agent1.initiate_chat(group_chat_manager, message="This is alice speaking.")
                 if user_input == "1":
-                    assert len(agent1.chat_messages[group_chat_manager]) == 6
-                    assert len(groupchat.messages) == 6
                     assert [msg["content"] for msg in agent1.chat_messages[group_chat_manager]] == [
                         "This is alice speaking.",
                         "This is bob speaking.",
@@ -153,9 +138,17 @@ def _test_selection_method(method: str):
                         "This is alice speaking.",
                         "This is bob speaking.",
                     ]
-                else:
-                    assert len(agent1.chat_messages[group_chat_manager]) == 6
-                    assert len(groupchat.messages) == 6
+                assert len(groupchat.messages) == 6
+                assert len(agent1.chat_messages[group_chat_manager]) == 6
+    elif method == "round_robin":
+        agent1.initiate_chat(group_chat_manager, message="This is alice speaking.")
+        assert len(agent1.chat_messages[group_chat_manager]) == 6
+        assert len(groupchat.messages) == 6
+        assert [msg["content"] for msg in agent1.chat_messages[group_chat_manager]] == [
+            "This is alice speaking.",
+            "This is bob speaking.",
+            "This is charlie speaking.",
+        ] * 2
     elif method == "wrong":
         with pytest.raises(ValueError):
             agent1.initiate_chat(group_chat_manager, message="This is alice speaking.")
@@ -187,7 +180,7 @@ def _test_n_agents_less_than_3(method):
         messages=[],
         max_round=6,
         speaker_selection_method=method,
-        allow_repeat_speaker=True if method == "random" else False,
+        allow_repeat_speaker=method == "random",
     )
     group_chat_manager = autogen.GroupChatManager(groupchat=groupchat, llm_config=False)
     agent1.initiate_chat(group_chat_manager, message="This is alice speaking.")

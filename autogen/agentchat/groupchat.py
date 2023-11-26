@@ -58,11 +58,10 @@ class GroupChat:
         """Return the next agent in the list."""
         if agents == self.agents:
             return agents[(self.agent_names.index(agent.name) + 1) % len(agents)]
-        else:
-            offset = self.agent_names.index(agent.name) + 1
-            for i in range(len(self.agents)):
-                if self.agents[(offset + i) % len(self.agents)] in agents:
-                    return self.agents[(offset + i) % len(self.agents)]
+        offset = self.agent_names.index(agent.name) + 1
+        for i in range(len(self.agents)):
+            if self.agents[(offset + i) % len(self.agents)] in agents:
+                return self.agents[(offset + i) % len(self.agents)]
 
     def select_speaker_msg(self, agents: List[Agent]):
         """Return the message for selecting the next speaker."""
@@ -88,7 +87,7 @@ Then select the next role from {[agent.name for agent in agents]} to play. Only 
                 break
             try:
                 i = input("Enter the number of the next speaker (enter nothing or `q` to use auto selection): ")
-                if i == "" or i == "q":
+                if i in ["", "q"]:
                     break
                 i = int(i)
                 if i > 0 and i <= _n_agents:
@@ -145,8 +144,7 @@ Then select the next role from {[agent.name for agent in agents]} to play. Only 
         agents = agents if self.allow_repeat_speaker else [agent for agent in agents if agent != last_speaker]
 
         if self.speaker_selection_method.lower() == "manual":
-            selected_agent = self.manual_select_speaker(agents)
-            if selected_agent:
+            if selected_agent := self.manual_select_speaker(agents):
                 return selected_agent
         elif self.speaker_selection_method.lower() == "round_robin":
             return self.next_agent(last_speaker, agents)
@@ -208,7 +206,7 @@ Then select the next role from {[agent.name for agent in agents]} to play. Only 
             regex = (
                 r"(?<=\W)" + re.escape(agent.name) + r"(?=\W)"
             )  # Finds agent mentions, taking word boundaries into account
-            count = len(re.findall(regex, " " + message_content + " "))  # Pad the message to help with matching
+            count = len(re.findall(regex, f" {message_content} "))
             if count > 0:
                 mentions[agent.name] = count
         return mentions

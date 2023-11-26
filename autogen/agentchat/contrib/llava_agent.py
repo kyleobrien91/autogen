@@ -82,7 +82,7 @@ class LLaVAAgent(MultimodalConversableAgent):
 
         out = ""
         retry = 10
-        while len(out) == 0 and retry > 0:
+        while not out and retry > 0:
             # image names will be inferred automatically from llava_call
             out = llava_call_binary(
                 prompt=prompt,
@@ -107,7 +107,6 @@ def _llava_call_binary_with_config(
         llava_mode = "remote"
 
     if llava_mode == "local":
-        headers = {"User-Agent": "LLaVA Client"}
         pload = {
             "model": config["model"],
             "prompt": prompt,
@@ -117,6 +116,7 @@ def _llava_call_binary_with_config(
             "images": images,
         }
 
+        headers = {"User-Agent": "LLaVA Client"}
         response = requests.post(
             config["base_url"].rstrip("/") + "/worker_generate_stream", headers=headers, json=pload, stream=False
         )
@@ -127,17 +127,11 @@ def _llava_call_binary_with_config(
                 output = data["text"].split(SEP)[-1]
     elif llava_mode == "remote":
         # The Replicate version of the model only support 1 image for now.
-        img = "data:image/jpeg;base64," + images[0]
+        img = f"data:image/jpeg;base64,{images[0]}"
         response = replicate.run(
             config["base_url"], input={"image": img, "prompt": prompt.replace("<image>", " "), "seed": seed}
         )
-        # The yorickvp/llava-13b model can stream output as it's running.
-        # The predict method returns an iterator, and you can iterate over that output.
-        output = ""
-        for item in response:
-            # https://replicate.com/yorickvp/llava-13b/versions/2facb4a474a0462c15041b78b1ad70952ea46b5ec6ad29583c0b29dbd4249591/api#output-schema
-            output += item
-
+        output = "".join(response)
     # Remove the prompt and the space.
     output = output.replace(prompt, "").strip().rstrip()
     return output

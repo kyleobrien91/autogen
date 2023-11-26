@@ -341,10 +341,7 @@ class ConversableAgent(Agent):
         Raises:
             ValueError: if the message can't be converted into a valid ChatCompletion message.
         """
-        # When the agent composes and sends the message, the role of the message is "assistant"
-        # unless it's "function".
-        valid = self._append_oai_message(message, "assistant", recipient)
-        if valid:
+        if valid := self._append_oai_message(message, "assistant", recipient):
             recipient.receive(message, self, request_reply, silent)
         else:
             raise ValueError(
@@ -390,10 +387,7 @@ class ConversableAgent(Agent):
         Raises:
             ValueError: if the message can't be converted into a valid ChatCompletion message.
         """
-        # When the agent composes and sends the message, the role of the message is "assistant"
-        # unless it's "function".
-        valid = self._append_oai_message(message, "assistant", recipient)
-        if valid:
+        if valid := self._append_oai_message(message, "assistant", recipient):
             await recipient.a_receive(message, self, request_reply, silent)
         else:
             raise ValueError(
@@ -647,9 +641,7 @@ class ConversableAgent(Agent):
             messages_to_scan = 0
             for i in range(len(messages)):
                 message = messages[-(i + 1)]
-                if "role" not in message:
-                    break
-                elif message["role"] != "user":
+                if "role" not in message or message["role"] != "user":
                     break
                 else:
                     messages_to_scan += 1
@@ -736,32 +728,31 @@ class ConversableAgent(Agent):
             no_human_input_msg = "NO HUMAN INPUT RECEIVED." if not reply else ""
             # if the human input is empty, and the message is a termination message, then we will terminate the conversation
             reply = reply if reply or not self._is_termination_msg(message) else "exit"
-        else:
-            if self._consecutive_auto_reply_counter[sender] >= self._max_consecutive_auto_reply_dict[sender]:
-                if self.human_input_mode == "NEVER":
-                    reply = "exit"
-                else:
-                    # self.human_input_mode == "TERMINATE":
-                    terminate = self._is_termination_msg(message)
-                    reply = self.get_human_input(
-                        f"Please give feedback to {sender.name}. Press enter or type 'exit' to stop the conversation: "
-                        if terminate
-                        else f"Please give feedback to {sender.name}. Press enter to skip and use auto-reply, or type 'exit' to stop the conversation: "
-                    )
-                    no_human_input_msg = "NO HUMAN INPUT RECEIVED." if not reply else ""
-                    # if the human input is empty, and the message is a termination message, then we will terminate the conversation
-                    reply = reply if reply or not terminate else "exit"
-            elif self._is_termination_msg(message):
-                if self.human_input_mode == "NEVER":
-                    reply = "exit"
-                else:
-                    # self.human_input_mode == "TERMINATE":
-                    reply = self.get_human_input(
-                        f"Please give feedback to {sender.name}. Press enter or type 'exit' to stop the conversation: "
-                    )
-                    no_human_input_msg = "NO HUMAN INPUT RECEIVED." if not reply else ""
-                    # if the human input is empty, and the message is a termination message, then we will terminate the conversation
-                    reply = reply or "exit"
+        elif self._consecutive_auto_reply_counter[sender] >= self._max_consecutive_auto_reply_dict[sender]:
+            if self.human_input_mode == "NEVER":
+                reply = "exit"
+            else:
+                # self.human_input_mode == "TERMINATE":
+                terminate = self._is_termination_msg(message)
+                reply = self.get_human_input(
+                    f"Please give feedback to {sender.name}. Press enter or type 'exit' to stop the conversation: "
+                    if terminate
+                    else f"Please give feedback to {sender.name}. Press enter to skip and use auto-reply, or type 'exit' to stop the conversation: "
+                )
+                no_human_input_msg = "NO HUMAN INPUT RECEIVED." if not reply else ""
+                # if the human input is empty, and the message is a termination message, then we will terminate the conversation
+                reply = reply if reply or not terminate else "exit"
+        elif self._is_termination_msg(message):
+            if self.human_input_mode == "NEVER":
+                reply = "exit"
+            else:
+                # self.human_input_mode == "TERMINATE":
+                reply = self.get_human_input(
+                    f"Please give feedback to {sender.name}. Press enter or type 'exit' to stop the conversation: "
+                )
+                no_human_input_msg = "NO HUMAN INPUT RECEIVED." if not reply else ""
+                # if the human input is empty, and the message is a termination message, then we will terminate the conversation
+                reply = reply or "exit"
 
         # print the no_human_input_msg
         if no_human_input_msg:
@@ -807,32 +798,31 @@ class ConversableAgent(Agent):
             no_human_input_msg = "NO HUMAN INPUT RECEIVED." if not reply else ""
             # if the human input is empty, and the message is a termination message, then we will terminate the conversation
             reply = reply if reply or not self._is_termination_msg(message) else "exit"
-        else:
-            if self._consecutive_auto_reply_counter[sender] >= self._max_consecutive_auto_reply_dict[sender]:
-                if self.human_input_mode == "NEVER":
-                    reply = "exit"
-                else:
-                    # self.human_input_mode == "TERMINATE":
-                    terminate = self._is_termination_msg(message)
-                    reply = await self.a_get_human_input(
-                        f"Please give feedback to {sender.name}. Press enter or type 'exit' to stop the conversation: "
-                        if terminate
-                        else f"Please give feedback to {sender.name}. Press enter to skip and use auto-reply, or type 'exit' to stop the conversation: "
-                    )
-                    no_human_input_msg = "NO HUMAN INPUT RECEIVED." if not reply else ""
-                    # if the human input is empty, and the message is a termination message, then we will terminate the conversation
-                    reply = reply if reply or not terminate else "exit"
-            elif self._is_termination_msg(message):
-                if self.human_input_mode == "NEVER":
-                    reply = "exit"
-                else:
-                    # self.human_input_mode == "TERMINATE":
-                    reply = await self.a_get_human_input(
-                        f"Please give feedback to {sender.name}. Press enter or type 'exit' to stop the conversation: "
-                    )
-                    no_human_input_msg = "NO HUMAN INPUT RECEIVED." if not reply else ""
-                    # if the human input is empty, and the message is a termination message, then we will terminate the conversation
-                    reply = reply or "exit"
+        elif self._consecutive_auto_reply_counter[sender] >= self._max_consecutive_auto_reply_dict[sender]:
+            if self.human_input_mode == "NEVER":
+                reply = "exit"
+            else:
+                # self.human_input_mode == "TERMINATE":
+                terminate = self._is_termination_msg(message)
+                reply = await self.a_get_human_input(
+                    f"Please give feedback to {sender.name}. Press enter or type 'exit' to stop the conversation: "
+                    if terminate
+                    else f"Please give feedback to {sender.name}. Press enter to skip and use auto-reply, or type 'exit' to stop the conversation: "
+                )
+                no_human_input_msg = "NO HUMAN INPUT RECEIVED." if not reply else ""
+                # if the human input is empty, and the message is a termination message, then we will terminate the conversation
+                reply = reply if reply or not terminate else "exit"
+        elif self._is_termination_msg(message):
+            if self.human_input_mode == "NEVER":
+                reply = "exit"
+            else:
+                # self.human_input_mode == "TERMINATE":
+                reply = await self.a_get_human_input(
+                    f"Please give feedback to {sender.name}. Press enter or type 'exit' to stop the conversation: "
+                )
+                no_human_input_msg = "NO HUMAN INPUT RECEIVED." if not reply else ""
+                # if the human input is empty, and the message is a termination message, then we will terminate the conversation
+                reply = reply or "exit"
 
         # print the no_human_input_msg
         if no_human_input_msg:
@@ -990,8 +980,7 @@ class ConversableAgent(Agent):
         Returns:
             str: human input.
         """
-        reply = input(prompt)
-        return reply
+        return input(prompt)
 
     async def a_get_human_input(self, prompt: str) -> str:
         """(Async) Get human input.
@@ -1004,8 +993,7 @@ class ConversableAgent(Agent):
         Returns:
             str: human input.
         """
-        reply = input(prompt)
-        return reply
+        return input(prompt)
 
     def run_code(self, code, **kwargs):
         """Run the code and return the result.

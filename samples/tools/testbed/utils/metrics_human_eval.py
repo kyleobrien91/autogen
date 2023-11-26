@@ -20,7 +20,7 @@ def metrics(results_fh):
     num_rows = 0
 
     # Load the results. We'll need to iterate over them a few times.
-    results = list()
+    results = []
     for row in reader:
         num_rows += 1
 
@@ -34,7 +34,7 @@ def metrics(results_fh):
     # Print the header
     header = ["Trial"]
     for i in range(1, max_turns + 1):
-        header.append("cumulative_passes_by_turn_" + str(i))
+        header.append(f"cumulative_passes_by_turn_{str(i)}")
     header.append("fails")
     header.append("missing")
     print(",".join(header))
@@ -66,7 +66,14 @@ def metrics(results_fh):
                 fails += 1
 
         # Prepare the row in the format specified by the header
-        return str(t) + "," + ",".join([str(v) for v in counts[1:]]) + "," + str(fails) + "," + str(missing)
+        return (
+            f"{str(t)},"
+            + ",".join([str(v) for v in counts[1:]])
+            + ","
+            + str(fails)
+            + ","
+            + str(missing)
+        )
 
     # Print each row
     for t in range(0, num_trials):
@@ -109,7 +116,7 @@ Where:
     )
     args = parser.parse_args()
 
-    if args.scenario == "" or args.scenario == "-":
+    if args.scenario in ["", "-"]:
         metrics(sys.stdin)
     else:
         with open(args.scenario, "rt") as fh:

@@ -36,13 +36,12 @@ def get_market_news(ind, ind_upper):
         ]
     }
     feeds = data["feed"][ind:ind_upper]
-    feeds_summary = "\n".join(
+    return "\n".join(
         [
             f"News summary: {f['title']}. {f['summary']} overall_sentiment_score: {f['overall_sentiment_score']}"
             for f in feeds
         ]
     )
-    return feeds_summary
 
 
 @pytest.mark.asyncio

@@ -20,10 +20,7 @@ def get_image_data(image_file: str, use_b64=True) -> bytes:
         image.save(buffered, format="PNG")
         content = buffered.getvalue()
 
-    if use_b64:
-        return base64.b64encode(content).decode("utf-8")
-    else:
-        return content
+    return base64.b64encode(content).decode("utf-8") if use_b64 else content
 
 
 def llava_formater(prompt: str, order_image_tokens: bool = False) -> Tuple[str, List[str]]:
@@ -48,8 +45,7 @@ def llava_formater(prompt: str, order_image_tokens: bool = False) -> Tuple[str, 
     # Regular expression pattern for matching <img ...> tags
     img_tag_pattern = re.compile(r"<img ([^>]+)>")
 
-    # Find all image tags
-    for match in img_tag_pattern.finditer(prompt):
+    for match in img_tag_pattern.finditer(new_prompt):
         image_location = match.group(1)
 
         try:
@@ -120,12 +116,15 @@ def gpt4v_formatter(prompt: str) -> List[Union[str, dict]]:
             print(f"Warning! Unable to load image from {image_location}, because {e}")
             continue
 
-        # Add text before this image tag to output list
-        output.append({"type": "text", "text": prompt[last_index : match.start()]})
-
-        # Add image data to output list
-        output.append({"type": "image_url", "image_url": {"url": convert_base64_to_data_uri(img_data)}})
-
+        output.extend(
+            (
+                {"type": "text", "text": prompt[last_index : match.start()]},
+                {
+                    "type": "image_url",
+                    "image_url": {"url": convert_base64_to_data_uri(img_data)},
+                },
+            )
+        )
         last_index = match.end()
         image_count += 1
 
@@ -149,9 +148,7 @@ def extract_img_paths(paragraph: str) -> list:
         r"\b(?:http[s]?://\S+\.(?:jpg|jpeg|png|gif|bmp)|\S+\.(?:jpg|jpeg|png|gif|bmp))\b", re.IGNORECASE
     )
 
-    # Find all matches in the paragraph
-    img_paths = re.findall(img_path_pattern, paragraph)
-    return img_paths
+    return re.findall(img_path_pattern, paragraph)
 
 
 def _to_pil(data: str) -> Image.Image:

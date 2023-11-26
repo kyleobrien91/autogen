@@ -55,7 +55,7 @@ def count_token(input: Union[str, List, Dict], model: str = "gpt-3.5-turbo-0613"
     """
     if isinstance(input, str):
         return _num_token_from_text(input, model=model)
-    elif isinstance(input, list) or isinstance(input, dict):
+    elif isinstance(input, (list, dict)):
         return _num_token_from_messages(input, model=model)
     else:
         raise ValueError("input must be str, list or dict")
@@ -149,8 +149,9 @@ def num_tokens_from_functions(functions, model="gpt-3.5-turbo-0613") -> int:
 
     num_tokens = 0
     for function in functions:
-        function_tokens = len(encoding.encode(function["name"]))
-        function_tokens += len(encoding.encode(function["description"]))
+        function_tokens = len(encoding.encode(function["name"])) + len(
+            encoding.encode(function["description"])
+        )
         function_tokens -= 2
         if "parameters" in function:
             parameters = function["parameters"]
@@ -159,10 +160,7 @@ def num_tokens_from_functions(functions, model="gpt-3.5-turbo-0613") -> int:
                     function_tokens += len(encoding.encode(propertiesKey))
                     v = parameters["properties"][propertiesKey]
                     for field in v:
-                        if field == "type":
-                            function_tokens += 2
-                            function_tokens += len(encoding.encode(v["type"]))
-                        elif field == "description":
+                        if field == "description":
                             function_tokens += 2
                             function_tokens += len(encoding.encode(v["description"]))
                         elif field == "enum":
@@ -170,6 +168,9 @@ def num_tokens_from_functions(functions, model="gpt-3.5-turbo-0613") -> int:
                             for o in v["enum"]:
                                 function_tokens += 3
                                 function_tokens += len(encoding.encode(o))
+                        elif field == "type":
+                            function_tokens += 2
+                            function_tokens += len(encoding.encode(v["type"]))
                         else:
                             print(f"Warning: not supported field {field}")
                 function_tokens += 11

@@ -147,7 +147,7 @@ Reply "TERMINATE" in the end when everything is done.
 
             # convert trigger_count to int, default to 0.7
             trigger_count = self.compress_config["trigger_count"]
-            if not (isinstance(trigger_count, int) or isinstance(trigger_count, float)) or trigger_count <= 0:
+            if not (isinstance(trigger_count, (int, float))) or trigger_count <= 0:
                 raise ValueError("trigger_count must be a positive number.")
             if isinstance(trigger_count, float) and 0 < trigger_count <= 1:
                 self.compress_config["trigger_count"] = int(
@@ -270,11 +270,7 @@ Reply "TERMINATE" in the end when everything is done.
         return oai_message
 
     def _print_compress_info(self, init_token_count, token_used, token_after_compression):
-        to_print = "Token Count (including {} tokens from system msg and function descriptions). Before compression : {} | After: {}".format(
-            init_token_count,
-            token_used,
-            token_after_compression,
-        )
+        to_print = f"Token Count (including {init_token_count} tokens from system msg and function descriptions). Before compression : {token_used} | After: {token_after_compression}"
         print(colored(to_print, "magenta"), flush=True)
         print("-" * 80, flush=True)
 

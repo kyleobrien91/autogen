@@ -191,7 +191,12 @@ def create_qdrant_from_dir(
     # Upsert in batch of 100 or less if the total number of chunks is less than 100
     for i in range(0, len(chunks), min(100, len(chunks))):
         end_idx = i + min(100, len(chunks) - i)
-        client.add(collection_name, documents=chunks[i:end_idx], ids=[j for j in range(i, end_idx)], parallel=parallel)
+        client.add(
+            collection_name,
+            documents=chunks[i:end_idx],
+            ids=list(range(i, end_idx)),
+            parallel=parallel,
+        )
 
     # Create a payload index for the document field
     # Enables highly efficient payload filtering. Reference: https://qdrant.tech/documentation/concepts/indexing/#indexing
@@ -259,8 +264,9 @@ def query_qdrant(
         else None,
     )
 
-    data = {
+    return {
         "ids": [[result.id for result in sublist] for sublist in results],
-        "documents": [[result.document for result in sublist] for sublist in results],
+        "documents": [
+            [result.document for result in sublist] for sublist in results
+        ],
     }
-    return data

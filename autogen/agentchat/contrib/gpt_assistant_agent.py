@@ -75,7 +75,7 @@ class GPTAssistantAgent(ConversableAgent):
                     "No instructions were provided for given assistant. Using existing instructions from assistant API."
                 )
                 instructions = self.get_assistant_instructions()
-            elif overwrite_instructions is True:
+            elif overwrite_instructions:
                 logger.warning(
                     "overwrite_instructions is True. Provided instructions will be used and will modify the assistant in the API"
                 )

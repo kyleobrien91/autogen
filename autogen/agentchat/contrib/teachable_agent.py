@@ -245,7 +245,7 @@ class TeachableAgent(ConversableAgent):
         if len(memo_list) > 0:
             info = "\n# Memories that might help\n"
             for memo in memo_list:
-                info = info + "- " + memo + "\n"
+                info = f"{info}- {memo}" + "\n"
             if self.verbosity >= 1:
                 print(colored("\nMEMOS APPENDED TO LAST USER MESSAGE...\n" + info + "\n", "light_yellow"))
             memo_texts = memo_texts + "\n" + info
@@ -253,19 +253,18 @@ class TeachableAgent(ConversableAgent):
 
     def analyze(self, text_to_analyze, analysis_instructions):
         """Asks TextAnalyzerAgent to analyze the given text according to specific instructions."""
-        if self.verbosity >= 2:
-            # Use the messaging mechanism so that the analyzer's messages are included in the printed chat.
-            self.analyzer.reset()  # Clear the analyzer's list of messages.
-            self.send(
-                recipient=self.analyzer, message=text_to_analyze, request_reply=False
-            )  # Put the message in the analyzer's list.
-            self.send(recipient=self.analyzer, message=analysis_instructions, request_reply=True)  # Request the reply.
-            return self.last_message(self.analyzer)["content"]
-        else:
+        if self.verbosity < 2:
             # TODO: This is not an encouraged usage pattern. It breaks the conversation-centric design.
             # consider using the arg "silent"
             # Use the analyzer's method directly, to leave analyzer message out of the printed chat.
             return self.analyzer.analyze_text(text_to_analyze, analysis_instructions)
+        # Use the messaging mechanism so that the analyzer's messages are included in the printed chat.
+        self.analyzer.reset()  # Clear the analyzer's list of messages.
+        self.send(
+            recipient=self.analyzer, message=text_to_analyze, request_reply=False
+        )  # Put the message in the analyzer's list.
+        self.send(recipient=self.analyzer, message=analysis_instructions, request_reply=True)  # Request the reply.
+        return self.last_message(self.analyzer)["content"]
 
 
 class MemoStore:
@@ -302,7 +301,7 @@ class MemoStore:
         self.last_memo_id = 0
         if (not reset) and os.path.exists(self.path_to_dict):
             print(colored("\nLOADING MEMORY FROM DISK", "light_green"))
-            print(colored("    Location = {}".format(self.path_to_dict), "light_green"))
+            print(colored(f"    Location = {self.path_to_dict}", "light_green"))
             with open(self.path_to_dict, "rb") as f:
                 self.uid_text_dict = pickle.load(f)
                 self.last_memo_id = len(self.uid_text_dict)
@@ -316,7 +315,7 @@ class MemoStore:
             input_text, output_text = text
             print(
                 colored(
-                    "  ID: {}\n    INPUT TEXT: {}\n    OUTPUT TEXT: {}".format(uid, input_text, output_text),
+                    f"  ID: {uid}\n    INPUT TEXT: {input_text}\n    OUTPUT TEXT: {output_text}",
                     "light_green",
                 )
             )
@@ -324,7 +323,7 @@ class MemoStore:
     def close(self):
         """Saves self.uid_text_dict to disk."""
         print(colored("\nSAVING MEMORY TO DISK", "light_green"))
-        print(colored("    Location = {}".format(self.path_to_dict), "light_green"))
+        print(colored(f"    Location = {self.path_to_dict}", "light_green"))
         with open(self.path_to_dict, "wb") as file:
             pickle.dump(self.uid_text_dict, file)
 
@@ -343,9 +342,7 @@ class MemoStore:
         if self.verbosity >= 1:
             print(
                 colored(
-                    "\nINPUT-OUTPUT PAIR ADDED TO VECTOR DATABASE:\n  ID\n    {}\n  INPUT\n    {}\n  OUTPUT\n    {}".format(
-                        self.last_memo_id, input_text, output_text
-                    ),
+                    f"\nINPUT-OUTPUT PAIR ADDED TO VECTOR DATABASE:\n  ID\n    {self.last_memo_id}\n  INPUT\n    {input_text}\n  OUTPUT\n    {output_text}",
                     "light_green",
                 )
             )
@@ -361,9 +358,7 @@ class MemoStore:
         if self.verbosity >= 1:
             print(
                 colored(
-                    "\nINPUT-OUTPUT PAIR RETRIEVED FROM VECTOR DATABASE:\n  INPUT1\n    {}\n  OUTPUT\n    {}\n  DISTANCE\n    {}".format(
-                        input_text, output_text, distance
-                    ),
+                    f"\nINPUT-OUTPUT PAIR RETRIEVED FROM VECTOR DATABASE:\n  INPUT1\n    {input_text}\n  OUTPUT\n    {output_text}\n  DISTANCE\n    {distance}",
                     "light_green",
                 )
             )
@@ -371,8 +366,7 @@ class MemoStore:
 
     def get_related_memos(self, query_text, n_results, threshold):
         """Retrieves memos that are related to the given query text within the specified distance threshold."""
-        if n_results > len(self.uid_text_dict):
-            n_results = len(self.uid_text_dict)
+        n_results = min(n_results, len(self.uid_text_dict))
         results = self.vec_db.query(query_texts=[query_text], n_results=n_results)
         memos = []
         num_results = len(results["ids"][0])
@@ -384,9 +378,7 @@ class MemoStore:
                 if self.verbosity >= 1:
                     print(
                         colored(
-                            "\nINPUT-OUTPUT PAIR RETRIEVED FROM VECTOR DATABASE:\n  INPUT1\n    {}\n  OUTPUT\n    {}\n  DISTANCE\n    {}".format(
-                                input_text, output_text, distance
-                            ),
+                            f"\nINPUT-OUTPUT PAIR RETRIEVED FROM VECTOR DATABASE:\n  INPUT1\n    {input_text}\n  OUTPUT\n    {output_text}\n  DISTANCE\n    {distance}",
                             "light_green",
                         )
                     )
@@ -397,28 +389,47 @@ class MemoStore:
         """Adds a few arbitrary examples to the vector DB, just to make retrieval less trivial."""
         if self.verbosity >= 1:
             print(colored("\nPREPOPULATING MEMORY", "light_green"))
-        examples = []
-        examples.append({"text": "When I say papers I mean research papers, which are typically pdfs.", "label": "yes"})
-        examples.append({"text": "Please verify that each paper you listed actually uses langchain.", "label": "no"})
-        examples.append({"text": "Tell gpt the output should still be latex code.", "label": "no"})
-        examples.append({"text": "Hint: convert pdfs to text and then answer questions based on them.", "label": "yes"})
-        examples.append(
-            {"text": "To create a good PPT, include enough content to make it interesting.", "label": "yes"}
-        )
-        examples.append(
+        examples = [
+            {
+                "text": "When I say papers I mean research papers, which are typically pdfs.",
+                "label": "yes",
+            },
+            {
+                "text": "Please verify that each paper you listed actually uses langchain.",
+                "label": "no",
+            },
+            {
+                "text": "Tell gpt the output should still be latex code.",
+                "label": "no",
+            },
+            {
+                "text": "Hint: convert pdfs to text and then answer questions based on them.",
+                "label": "yes",
+            },
+            {
+                "text": "To create a good PPT, include enough content to make it interesting.",
+                "label": "yes",
+            },
             {
                 "text": "No, for this case the columns should be aspects and the rows should be frameworks.",
                 "label": "no",
-            }
-        )
-        examples.append({"text": "When writing code, remember to include any libraries that are used.", "label": "yes"})
-        examples.append({"text": "Please summarize the papers by Eric Horvitz on bounded rationality.", "label": "no"})
-        examples.append({"text": "Compare the h-index of Daniel Weld and Oren Etzioni.", "label": "no"})
-        examples.append(
+            },
+            {
+                "text": "When writing code, remember to include any libraries that are used.",
+                "label": "yes",
+            },
+            {
+                "text": "Please summarize the papers by Eric Horvitz on bounded rationality.",
+                "label": "no",
+            },
+            {
+                "text": "Compare the h-index of Daniel Weld and Oren Etzioni.",
+                "label": "no",
+            },
             {
                 "text": "Double check to be sure that the columns in a table correspond to what was asked for.",
                 "label": "yes",
-            }
-        )
+            },
+        ]
         for example in examples:
             self.add_input_output_pair(example["text"], example["label"])

@@ -46,7 +46,13 @@ class MultimodalConversableAgent(ConversableAgent):
         self._is_termination_msg = (
             is_termination_msg
             if is_termination_msg is not None
-            else (lambda x: any([item["text"] == "TERMINATE" for item in x.get("content") if item["type"] == "text"]))
+            else (
+                lambda x: any(
+                    item["text"] == "TERMINATE"
+                    for item in x.get("content")
+                    if item["type"] == "text"
+                )
+            )
         )
 
     @property
@@ -71,10 +77,7 @@ class MultimodalConversableAgent(ConversableAgent):
         """
         if isinstance(message, str):
             return {"content": gpt4v_formatter(message)}
-        if isinstance(message, list):
-            return {"content": message}
-        else:
-            return message
+        return {"content": message} if isinstance(message, list) else message
 
     def _print_received_message(self, message: Union[Dict, str], sender: Agent):
         # print the message received

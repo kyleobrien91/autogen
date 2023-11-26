@@ -61,7 +61,7 @@ def run_scenarios(scenario, n_repeats, is_native, config_list, requirements, res
             for line in fh:
                 instance = json.loads(line)
 
-                scenario_name + "_" + instance["id"]
+                f"{scenario_name}_" + instance["id"]
 
                 # Create a folder to store the results
 
@@ -114,16 +114,15 @@ def run_scenarios(scenario, n_repeats, is_native, config_list, requirements, res
 
 
 def expand_scenario(scenario_dir, scenario, output_file):
-    template_fh = open(os.path.join(scenario_dir, scenario["template"]), "rt")
-    output_fh = open(output_file, "wt")
+    with open(os.path.join(scenario_dir, scenario["template"]), "rt") as template_fh:
+        output_fh = open(output_file, "wt")
 
-    for line in template_fh:
-        if "values" in scenario:
-            for k, v in scenario["values"].items():
-                line = line.replace(k, v)
-        output_fh.write(line)
+        for line in template_fh:
+            if "values" in scenario:
+                for k, v in scenario["values"].items():
+                    line = line.replace(k, v)
+            output_fh.write(line)
 
-    template_fh.close()
     output_fh.close()
 
 
@@ -269,9 +268,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--requirements",
         type=str,
-        help="The requirements file to pip install before running the scenario. This file must be found in the '"
-        + INCLUDES_DIR
-        + "' directory. (default: requirements.txt)",
+        help=f"The requirements file to pip install before running the scenario. This file must be found in the '{INCLUDES_DIR}' directory. (default: requirements.txt)",
         default=None,
     )
     parser.add_argument(
@@ -300,14 +297,13 @@ if __name__ == "__main__":
         )
 
         if choice.strip().lower() != "yes":
-            sys.exit("Received '" + choice + "'. Exiting.")
+            sys.exit(f"Received '{choice}'. Exiting.")
 
-    # What requirements file are we working with?
-    requirements = "requirements.txt"
     if args.requirements is not None:
         requirements = args.requirements
-
-    is_native = True if args.native else False
+    else:
+        requirements = "requirements.txt"
+    is_native = bool(args.native)
     if not is_native:
         # Import docker
         import docker

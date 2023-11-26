@@ -88,7 +88,7 @@ def test_get_assistant_instructions():
     instruction_match = assistant.get_assistant_instructions() == "This is a test"
     assistant.delete_assistant()
 
-    assert instruction_match is True
+    assert instruction_match
 
 
 @pytest.mark.skipif(
@@ -132,7 +132,7 @@ def test_gpt_assistant_instructions_overwrite():
     instruction_match = assistant.get_assistant_instructions() == instructions2
     assistant.delete_assistant()
 
-    assert instruction_match is True
+    assert instruction_match
 
 
 @pytest.mark.skipif(
@@ -167,7 +167,7 @@ def test_gpt_assistant_existing_no_instructions():
 
     instruction_match = assistant.get_assistant_instructions() == instructions
     assistant.delete_assistant()
-    assert instruction_match is True
+    assert instruction_match
 
 
 @pytest.mark.skipif(
